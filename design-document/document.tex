@@ -1,0 +1,47 @@
+\documentclass[12pt,a4paper]{article}
+
+% ----- PACKAGES -----
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+
+\geometry{margin=1in}
+\setstretch{1.2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Project Design Document}
+\lhead{\leftmark}
+\rfoot{Page \thepage}
+
+\title{
+    \vspace{2cm}
+    \textbf{Advanced Information Retrieval}\\[0.5cm]
+    \large Fine-Tuning and Transferability in Legal Information Retrieval\\[1.5cm]
+}
+\author{
+    Raphael Habichler\thanks{student-id: 12419578} \and
+    Author Two\thanks{email2@example.com} \and
+    Author Three\thanks{email3@example.com}
+}
+\date{\today}
+
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+\begin{document}
+\maketitle
+\section{Abstract}
+Research by Hoffmann et al. \cite{hoffmann2022trainingcomputeoptimallargelanguage} suggests that data quality and quantity are among the most critical factors in training large language models (LLMs), which, at the time of writing this design document, dominate the rankings in text embedding benchmarks such as MTEB \cite{MTEB} and MMTEB \cite{MMTEB}.
+
+To mitigate the need for massive amounts of training data, we employed a state-of-the-art open-weight embedding model, Qwen3-Embedding-8B \cite{qwen3embedding}, which we fine-tuned on pre-labeled German domain-specific datasets \cite{wrzalik-krechel-2021-gerdalir}. We then evaluated its retrieval performance across multiple jurisdictions, specifically German \cite{9723721} and Chinese \cite{li2023lecardv2} legal corpora.
+
+This approach enables users to retrieve semantically similar documents across jurisdictions, significantly facilitating international legal communication and comparative analysis.
+\newpage
+\bibliographystyle{plain}
+\bibliography{references} 
+\end{document}
