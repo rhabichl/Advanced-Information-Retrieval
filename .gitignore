@@ -11,3 +11,4 @@
 *.lot
 *.lof
 *.lol
+!flowchart.pdf

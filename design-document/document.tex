@@ -41,6 +41,19 @@ Research by Hoffmann et al. \cite{hoffmann2022trainingcomputeoptimallargelanguag
 To mitigate the need for massive amounts of training data, we employed a state-of-the-art open-weight embedding model, Qwen3-Embedding-8B \cite{qwen3embedding}, which we fine-tuned on pre-labeled German domain-specific datasets \cite{wrzalik-krechel-2021-gerdalir}. We then evaluated its retrieval performance across multiple jurisdictions, specifically German \cite{9723721} and Chinese \cite{li2023lecardv2} legal corpora.
 
 This approach enables users to retrieve semantically similar documents across jurisdictions, significantly facilitating international legal communication and comparative analysis.
+
+\section{Methodology}
+Figure~\ref{fig:flowchart} shows our research workflow. We collect legal documents from Austrian, German, and Chinese sources, then prepare the data for model training and evaluation.
+
+We test two approaches: first, using the pre-trained Qwen3-Embedding-8B model directly on all three datasets. Second, fine-tuning the model on German legal data using cosine similarity between queries and documents. We then evaluate both models using Precision@k, Recall@k, and nDCG@k metrics to compare their performance across jurisdictions.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{flowchart.pdf}
+\caption{Project workflow and methodology}
+\label{fig:flowchart}
+\end{figure}
+
 \newpage
 \bibliographystyle{plain}
 \bibliography{references} 
