@@ -23,12 +23,13 @@
 \title{
     \vspace{2cm}
     \textbf{Advanced Information Retrieval}\\[0.5cm]
-    \large Fine-Tuning and Transferability in Legal Information Retrieval\\[1.5cm]
+    \large Fine-Tuning and Transferability in Legal Information Retrieval\\[0.5cm]
+    \normalsize Group Number: 27\\[1cm]
 }
 \author{
-    Raphael Habichler\thanks{student-id: 12419578} \and
-    Mark Sesko\thanks{student-id: 12114879} \and
-    Paul Brandstätter\thanks{student-id: 12212566}
+    Raphael Habichler\thanks{student-id: 12419578, Role: Data Processing \& Fine-tuning} \and
+    Mark Sesko\thanks{student-id: 12114879, Role: Evaluation \& Analysis} \and
+    Paul Brandstätter\thanks{student-id: 12212566, Role: Dataset Preparation \& Documentation}
 }
 \date{\today}
 
@@ -37,17 +38,50 @@
 
 \begin{document}
 \maketitle
+
 \section{Abstract}
-Research by Hoffmann et al. \cite{hoffmann2022trainingcomputeoptimallargelanguage} suggests that data quality and quantity are among the most critical factors in training large language models (LLMs), which, at the time of writing this design document, dominate the rankings in text embedding benchmarks such as MTEB \cite{MTEB} and MMTEB \cite{MMTEB}.
+This project investigates the transferability of domain-specific fine-tuned embedding models across different legal jurisdictions. We fine-tune the Qwen3-Embedding-8B model on German legal data and evaluate its performance on Austrian, German, and Chinese legal corpora to assess cross-jurisdictional knowledge transfer.
 
-To mitigate the need for massive amounts of training data, we employed a state-of-the-art open-weight embedding model, Qwen3-Embedding-8B \cite{qwen3embedding}, which we fine-tuned on pre-labeled German domain-specific datasets \cite{wrzalik-krechel-2021-gerdalir}. We then evaluated its retrieval performance across multiple jurisdictions, specifically German \cite{9723721} and Chinese \cite{li2023lecardv2} legal corpora.
+\section{Idea and Goal}
+\textbf{Research Question}: Can a legal embedding model fine-tuned on German law effectively retrieve relevant documents in other jurisdictions (Austrian and Chinese law)?
 
-This approach enables users to retrieve semantically similar documents across jurisdictions, significantly facilitating international legal communication and comparative analysis.
+The goal is to build legal information retrieval systems that work across multiple jurisdictions without requiring extensive training data for each legal system. This addresses the challenge of cross-jurisdictional legal search and comparative law analysis.
 
-\section{Methodology}
-Figure~\ref{fig:flowchart} shows our research workflow. We collect legal documents from Austrian, German, and Chinese sources, then prepare the data for model training and evaluation.
+\section{Main Task}
+Our focus is on fine-tuning a state-of-the-art embedding model (Qwen3-Embedding-8B \cite{qwen3embedding}) on German legal data and measuring how well this domain-specific knowledge transfers to other legal systems, specifically Austrian and Chinese law.
 
-We test two approaches: first, using the pre-trained Qwen3-Embedding-8B model directly on all three datasets. Second, fine-tuning the model on German legal data using cosine similarity between queries and documents. We then evaluate both models using Precision@k, Recall@k, and nDCG@k metrics to compare their performance across jurisdictions.
+\section{Dataset and Processing}
+\subsection{Data Sources}
+\begin{itemize}
+    \item \textbf{Austrian Law Data}: Legal documents and case law from Austrian jurisdiction
+    \item \textbf{German Law Data}: GerDaLIR dataset \cite{wrzalik-krechel-2021-gerdalir} and German legal corpus \cite{9723721}
+    \item \textbf{Chinese Law Data}: LeCaRDv2 dataset \cite{li2023lecardv2}
+\end{itemize}
+
+\subsection{Processing}
+Data preprocessing includes text normalization, document segmentation, and creation of query-document pairs for training and evaluation purposes.
+
+\section{Methods and Models}
+We use the Qwen3-Embedding-8B model \cite{qwen3embedding} and compare two experimental conditions:
+\begin{enumerate}
+    \item \textbf{Baseline}: Pre-trained Qwen3-Embedding-8B evaluated directly on all three jurisdictions
+    \item \textbf{Fine-tuned}: Model fine-tuned on German domain-specific dataset, then evaluated on all three jurisdictions
+\end{enumerate}
+
+The fine-tuning process uses cosine-loss similarity for training. Query and document texts are encoded and pooled, then their cosine similarity is computed. This trains the model to produce embeddings where relevant query-document pairs have high similarity.
+
+\section{Evaluation}
+We measure retrieval performance using standard information retrieval metrics:
+\begin{itemize}
+    \item \textbf{Precision@k}: Proportion of relevant documents in top-k results
+    \item \textbf{Recall@k}: Proportion of all relevant documents found in top-k results
+    \item \textbf{nDCG@k}: Normalized Discounted Cumulative Gain, accounting for ranking quality
+\end{itemize}
+
+Performance is compared between the baseline and fine-tuned models across all three jurisdictions to quantify transferability.
+
+\section{Workflow}
+Figure~\ref{fig:flowchart} illustrates our complete research pipeline from data collection through evaluation.
 
 \begin{figure}[h]
 \centering
