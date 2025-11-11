@@ -12,3 +12,7 @@
 *.lof
 *.lol
 !flowchart.pdf
+*.run.xml
+*.bcf
+.DS_Store
+

@@ -8,6 +8,8 @@
 \usepackage{hyperref}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
+\usepackage[maxbibnames=3,minbibnames=1,maxcitenames=2,mincitenames=1,style=numeric-comp,backend=biber]{biblatex}
+\addbibresource{references.bib}
 
 
 \geometry{margin=1in}
@@ -26,7 +28,7 @@
 \author{
     Raphael Habichler\thanks{student-id: 12419578} \and
     Mark Sesko\thanks{student-id: 12114879} \and
-    Author Three\thanks{email3@example.com}
+    Paul Brandstätter\thanks{student-id: 12212566}
 }
 \date{\today}
 
@@ -55,6 +57,5 @@ We test two approaches: first, using the pre-trained Qwen3-Embedding-8B model di
 \end{figure}
 
 \newpage
-\bibliographystyle{plain}
-\bibliography{references} 
+\printbibliography 
 \end{document}
