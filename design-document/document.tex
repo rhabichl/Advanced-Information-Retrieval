@@ -21,7 +21,6 @@
 \rfoot{Page \thepage}
 
 \title{
-    \vspace{-2cm}
     \textbf{Advanced Information Retrieval}\\[0.2cm]
     \large Fine-Tuning and Transferability in Legal Information Retrieval\\[0.2cm]
     \normalsize Group Number: 27\\[0.3cm]
@@ -40,48 +39,50 @@
 \maketitle
 
 \section{Abstract}
-This project investigates the transferability of domain-specific fine-tuned embedding models across different legal jurisdictions. We fine-tune the Qwen3-Embedding-8B model on German legal data and evaluate its performance on Austrian, German, and Chinese legal corpora to assess cross-jurisdictional knowledge transfer.
+This project tests whether embedding models fine-tuned on one legal system work well on others. We fine-tune Qwen3-Embedding-8B on German legal data and test its performance on Austrian, German, and Chinese legal documents.
 
 \section{Idea and Goal}
 Research Question: Can a legal embedding model fine-tuned on German law effectively retrieve relevant documents in other jurisdictions (Austrian and Chinese law)?
 
-The goal is to build legal information retrieval systems that work across multiple jurisdictions without requiring extensive training data for each legal system. This addresses the challenge of cross-jurisdictional legal search and comparative law analysis.
+We want to build legal search systems that work across different countries without needing large training datasets for each one. This solves the problem of searching and comparing laws across different legal systems.
 
 \section{Main Task}
-Our focus is on fine-tuning a state-of-the-art embedding model (Qwen3-Embedding-8B \cite{qwen3embedding}) on German legal data and measuring how well this domain-specific knowledge transfers to other legal systems, specifically Austrian and Chinese law.
+We fine-tune the Qwen3-Embedding-8B model \cite{qwen3embedding} on German legal data and test how well it works on Austrian and Chinese law.
 
 \section{Dataset and Processing}
 \subsection{Data Sources}
-We use three legal datasets from different jurisdictions. 
-The Austrian Law Data is a synthetic dataset created from Austrian legal documents. Since no pre-labeled query-document pairs exist, we generate queries using LLMs to create evaluation pairs. 
-The German Law Data consists of the GerDaLIR dataset \cite{wrzalik-krechel-2021-gerdalir} and German legal corpus \cite{9723721} with pre-labeled query-document pairs for fine-tuning and evaluation. 
-The Chinese Law Data uses the LeCaRDv2 dataset \cite{li2023lecardv2} with existing query-document annotations.
+We use three legal datasets. 
+Austrian Law Data is synthetic. We create it from Austrian legal documents and generate queries using LLMs since no labeled pairs exist. 
+German Law Data comes from GerDaLIR \cite{wrzalik-krechel-2021-gerdalir} and a German legal corpus \cite{9723721} with pre-labeled query-document pairs for training and testing. 
+Chinese Law Data uses LeCaRDv2 \cite{li2023lecardv2} with existing annotations.
 
 \subsection{Processing}
-Data preprocessing includes text normalization, document segmentation, and query-document pair preparation. 
-For Austrian data, we synthetically generate queries from legal documents to create the evaluation dataset.
+We normalize text, segment documents, and prepare query-document pairs. 
+For Austrian data, we generate queries from documents using LLMs.
 
 \section{Methods and Models}
-We use the Qwen3-Embedding-8B model \cite{qwen3embedding} and compare two experimental conditions. 
-The baseline uses the pre-trained Qwen3-Embedding-8B evaluated directly on all three jurisdictions. 
-The fine-tuned approach adapts the model specifically on the German domain-specific dataset, then evaluates it on all three jurisdictions to assess transfer learning.
+We use Qwen3-Embedding-8B \cite{qwen3embedding} and compare two setups. 
+The baseline tests the pre-trained model directly on all three datasets. 
+The fine-tuned version trains the model on German data first, then tests it on all three datasets.
 
 \subsection{Fine-tuning Process}
-The fine-tuning procedure adapts the pre-trained model to the legal domain using German legal query-document pairs from the GerDaLIR dataset. 
-We employ a cosine similarity loss function that maximizes similarity between relevant query-document pairs and minimizes similarity for irrelevant pairs. 
-Both queries and documents are independently encoded through the embedding model, then pooled to create fixed-size vector representations. 
-The objective is to learn embeddings where semantically related legal texts are closer in vector space. 
-This domain-adapted model is then tested on Austrian (synthetic) and Chinese legal data to measure how well legal knowledge transfers across jurisdictions and languages.
+We train the model on German legal query-document pairs from GerDaLIR. 
+The training uses cosine similarity loss, which increases similarity for relevant pairs and decreases it for irrelevant ones. 
+Queries and documents are encoded separately, then pooled into fixed-size vectors. 
+The goal is to make similar legal texts have similar vectors. 
+We then test this trained model on Austrian and Chinese data to see how well it transfers across different legal systems and languages.
 
 \section{Evaluation}
-We measure retrieval performance using standard information retrieval metrics. 
-Precision@k measures the proportion of relevant documents in the top-k results. 
-Recall@k captures the proportion of all relevant documents found in the top-k results. 
-nDCG@k (Normalized Discounted Cumulative Gain) accounts for ranking quality by giving higher weight to correctly ranked relevant documents. 
-Performance is compared between the baseline and fine-tuned models across all three jurisdictions to quantify transferability.
+We use three standard metrics to measure performance. 
+Precision@k shows what fraction of the top-k results are relevant. 
+Recall@k shows what fraction of all relevant documents appear in the top-k results. 
+nDCG@k measures ranking quality by giving more weight to relevant documents ranked higher. 
+We compare the baseline and fine-tuned models on all three datasets to measure how well the model transfers.
+
+\newpage
 
 \section{Workflow}
-Figure~\ref{fig:flowchart} illustrates our complete research pipeline from data collection through evaluation.
+Figure~\ref{fig:flowchart} shows our research pipeline from data collection to evaluation.
 
 \begin{figure}[h]
 \centering
