@@ -1,0 +1,9 @@
+.venv/
+data/
+refs/
+data_proccessed/
+data_extracted/
+download_list.json
+law/
+law_txt/
+filtered_referneces.json
