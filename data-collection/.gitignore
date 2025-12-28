@@ -1,3 +1,5 @@
+matchings/
+dataset.parquet
 .venv/
 data/
 refs/
