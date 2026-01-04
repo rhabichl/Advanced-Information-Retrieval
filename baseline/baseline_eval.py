@@ -78,7 +78,9 @@ class DatasetIR:
     qrels: Dict[str, List[str]]  # qid -> list of relevant corpus_ids
 
 
-def load_austrian_dataset_ir(dataset_id: str = "krapfi/Advanced-Information-Retrieval") -> DatasetIR:
+def load_austrian_dataset_ir(
+    dataset_id: str = "krapfi/Advanced-Information-Retrieval",
+) -> DatasetIR:
     """
     Austrian dataset format:
       - id: document id (not unique across rows)
@@ -140,7 +142,9 @@ def load_encoder(model_name_or_path: str):
     import torch
     from transformers import AutoModel, AutoTokenizer
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name_or_path, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name_or_path, trust_remote_code=True
+    )
     model = AutoModel.from_pretrained(model_name_or_path, trust_remote_code=True)
     model.eval()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -209,7 +213,9 @@ def topk_cosine_retrieval(
         q = query_emb[start : start + query_batch]  # (b, d)
         scores = q @ doc_emb.T  # (b, n_docs)
         # argpartition for top-k, then sort within top-k
-        idx_part = np.argpartition(-scores, kth=min(k, scores.shape[1] - 1), axis=1)[:, :k]
+        idx_part = np.argpartition(-scores, kth=min(k, scores.shape[1] - 1), axis=1)[
+            :, :k
+        ]
         part_scores = np.take_along_axis(scores, idx_part, axis=1)
         order = np.argsort(-part_scores, axis=1)
         idx_sorted = np.take_along_axis(idx_part, order, axis=1)
@@ -248,7 +254,12 @@ def main() -> None:
     ap.add_argument("--model", default="sentence-transformers/all-MiniLM-L6-v2")
     ap.add_argument("--train_ratio", type=float, default=0.7)
     ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument("--max_queries", type=int, default=20000, help="Cap queries for faster runs (0 = no cap)")
+    ap.add_argument(
+        "--max_queries",
+        type=int,
+        default=20000,
+        help="Cap queries for faster runs (0 = no cap)",
+    )
     ap.add_argument("--k", type=str, default="1,3,5,10")
     ap.add_argument("--batch_size", type=int, default=32)
     ap.add_argument("--max_length", type=int, default=512)
@@ -265,7 +276,9 @@ def main() -> None:
     print(f"Queries: {len(data.query_ids)}")
 
     train_qids, test_qids = split_queries(data.query_ids, args.train_ratio, args.seed)
-    print(f"Split queries: train={len(train_qids)} test={len(test_qids)} (ratio={args.train_ratio})")
+    print(
+        f"Split queries: train={len(train_qids)} test={len(test_qids)} (ratio={args.train_ratio})"
+    )
 
     # Optionally cap queries for faster experiments
     if args.max_queries and args.max_queries > 0:
@@ -311,7 +324,9 @@ def main() -> None:
     metrics = evaluate(test_qids, qid_to_ranked, data.qrels, ks)
 
     print("\n=== Baseline metrics ===")
-    for key in sorted(metrics.keys(), key=lambda s: (s.split("@")[0], int(s.split("@")[1]))):
+    for key in sorted(
+        metrics.keys(), key=lambda s: (s.split("@")[0], int(s.split("@")[1]))
+    ):
         print(f"{key}: {metrics[key]:.4f}")
 
 
@@ -319,5 +334,3 @@ if __name__ == "__main__":
     # Quiet down tokenizer parallelism warning noise.
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     main()
-
-

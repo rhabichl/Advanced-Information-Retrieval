@@ -26,6 +26,7 @@ python3 baseline/baseline_eval.py \
 ```
 
 Notes:
+
 - `--train_ratio 0.7` creates a 70/30 split over queries (easy row-level split).
 - `--max_queries` is just for speed while debugging; set `0` to evaluate all test queries.
 - For your real baseline, swap `--model` to your intended model (e.g. `Qwen/Qwen3-Embedding-8B`) and run on a GPU machine.
