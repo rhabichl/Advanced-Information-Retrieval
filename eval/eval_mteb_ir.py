@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
 """
-Baseline retrieval evaluation (no fine-tuning).
+Evaluate an embedding model on an MTEB-style IR dataset (corpus/queries/qrels).
 
-Implements:
-- Load Austrian dataset from Hugging Face: krapfi/Advanced-Information-Retrieval
-- Build corpus (unique docs by `id`) and qrels (each query maps to its doc id)
-- 70/30 split on queries (easy, row-level)
-- Embed corpus + queries with a HF Transformers encoder model
-- Retrieve top-k by cosine similarity
-- Report Precision@k, Recall@k, nDCG@k
-
-Notes:
-- This is intentionally simple and self-contained (no external IR framework).
-- For big embedding models (e.g. Qwen3-Embedding-8B), run on a GPU box.
+Example:
+  python3 eval/eval_mteb_ir.py --dataset mteb/GerDaLIR --model Qwen/Qwen3-Embedding-8B
 """
 
 from __future__ import annotations
@@ -21,32 +12,18 @@ import argparse
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Sequence
 
 import numpy as np
 
-# Allow running as `python3 baseline/baseline_eval.py` from repo root.
+# Allow running as `python3 eval/eval_mteb_ir.py` from repo root.
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
 
-from ir.datasets import load_austrian_paired_ir
+from ir.datasets import load_mteb_ir
 from ir.embedding import encode_texts, load_encoder
 from ir.metrics import ndcg_at_k, precision_at_k, recall_at_k
 from ir.retrieval import l2_normalize, topk_cosine_retrieval
-
-
-def split_queries(
-    query_ids: Sequence[str],
-    train_ratio: float,
-    seed: int,
-) -> Tuple[List[str], List[str]]:
-    rng = np.random.default_rng(seed)
-    qids = np.array(list(query_ids), dtype=object)
-    rng.shuffle(qids)
-    split = int(round(len(qids) * train_ratio))
-    train = qids[:split].tolist()
-    test = qids[split:].tolist()
-    return train, test
 
 
 def evaluate(
@@ -74,20 +51,14 @@ def evaluate(
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", default="krapfi/Advanced-Information-Retrieval")
+    ap.add_argument("--dataset", default="mteb/GerDaLIR")
+    ap.add_argument("--split", default="test")
     ap.add_argument("--model", default="sentence-transformers/all-MiniLM-L6-v2")
-    ap.add_argument("--train_ratio", type=float, default=0.7)
-    ap.add_argument("--seed", type=int, default=42)
-    ap.add_argument(
-        "--max_queries",
-        type=int,
-        default=20000,
-        help="Cap queries for faster runs (0 = no cap)",
-    )
     ap.add_argument("--k", type=str, default="1,3,5,10")
     ap.add_argument("--batch_size", type=int, default=32)
     ap.add_argument("--max_length", type=int, default=512)
     ap.add_argument("--query_batch_retrieval", type=int, default=256)
+    ap.add_argument("--max_queries", type=int, default=0, help="Cap queries for speed (0 = no cap)")
     args = ap.parse_args()
 
     ks = [int(x.strip()) for x in args.k.split(",") if x.strip()]
@@ -95,23 +66,18 @@ def main() -> None:
     if not ks:
         raise SystemExit("Provide at least one k in --k")
 
-    data = load_austrian_paired_ir(args.dataset)
+    data = load_mteb_ir(args.dataset, split=args.split)
+    print(f"Dataset: {args.dataset} split={args.split}")
     print(f"Corpus docs: {len(data.corpus_ids)}")
     print(f"Queries: {len(data.query_ids)}")
 
-    train_qids, test_qids = split_queries(data.query_ids, args.train_ratio, args.seed)
-    print(
-        f"Split queries: train={len(train_qids)} test={len(test_qids)} (ratio={args.train_ratio})"
-    )
-
-    # Optionally cap queries for faster experiments
+    qids = data.query_ids
     if args.max_queries and args.max_queries > 0:
-        # cap test first (baseline eval focus), then train
-        test_qids = test_qids[: min(len(test_qids), args.max_queries)]
-        print(f"Capped test queries to: {len(test_qids)}")
+        qids = qids[: min(len(qids), args.max_queries)]
+        print(f"Capped queries to: {len(qids)}")
 
     qid_to_text = dict(zip(data.query_ids, data.query_texts))
-    test_texts = [qid_to_text[qid] for qid in test_qids]
+    query_texts = [qid_to_text[qid] for qid in qids]
 
     tokenizer, model, device = load_encoder(args.model)
     print(f"Model device: {device}")
@@ -126,7 +92,7 @@ def main() -> None:
         desc="Encoding corpus",
     )
     qry_emb = encode_texts(
-        test_texts,
+        query_texts,
         tokenizer=tokenizer,
         model=model,
         device=device,
@@ -145,18 +111,16 @@ def main() -> None:
         k=max(ks),
         query_batch=args.query_batch_retrieval,
     )
+    qid_to_ranked = {qids[i]: ranked_by_index[i] for i in range(len(qids))}
+    metrics = evaluate(qids, qid_to_ranked, data.qrels, ks)
 
-    qid_to_ranked = {test_qids[i]: ranked_by_index[i] for i in range(len(test_qids))}
-    metrics = evaluate(test_qids, qid_to_ranked, data.qrels, ks)
-
-    print("\n=== Baseline metrics ===")
-    for key in sorted(
-        metrics.keys(), key=lambda s: (s.split("@")[0], int(s.split("@")[1]))
-    ):
+    print("\n=== Metrics ===")
+    for key in sorted(metrics.keys(), key=lambda s: (s.split("@")[0], int(s.split("@")[1]))):
         print(f"{key}: {metrics[key]:.4f}")
 
 
 if __name__ == "__main__":
-    # Quiet down tokenizer parallelism warning noise.
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     main()
+
+
