@@ -3,41 +3,40 @@ from sentence_transformers import (
     SentenceTransformer,
     SentenceTransformerTrainer,
     SentenceTransformerTrainingArguments,
-    SentenceTransformerModelCardData,
 )
-from transformers import BitsAndBytesConfig
-from transformers.integrations import TensorBoardCallback
 from sentence_transformers.losses import CachedMultipleNegativesRankingLoss
 from sentence_transformers.training_args import BatchSamplers
-
 from sentence_transformers.evaluation import InformationRetrievalEvaluator
+from peft import LoraConfig, get_peft_model
 
-
-# 1. Load a model to finetune with 2. (Optional) model card data
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=True,
-    bnb_4bit_quant_type="nf4",
-    bnb_4bit_compute_dtype="bfloat16",
-    bnb_4bit_use_double_quant=True,
-)
+# 1. Load model WITHOUT quantization for training
 model = SentenceTransformer(
     "Qwen/Qwen3-Embedding-8B",
     model_kwargs={
-        "quantization_config": bnb_config,
         "device_map": "auto",
     },
 )
 
-# Load the three subsets
+# 2. Add LoRA for efficient training (if memory is an issue)
+peft_config = LoraConfig(
+    r=16,
+    lora_alpha=32,
+    target_modules=["q_proj", "v_proj", "k_proj", "o_proj"],
+    lora_dropout=0.05,
+    bias="none",
+    task_type="FEATURE_EXTRACTION"
+)
+# model = model.to_peft(peft_config)  # If using sentence-transformers with PEFT support
+
+# Load datasets
 qrels = load_dataset("mteb/GerDaLIR", "qrels", split="test")
 corpus = load_dataset("mteb/GerDaLIR", "corpus", split="test")
 queries = load_dataset("mteb/GerDaLIR", "queries", split="test")
 
-# Create lookup dictionaries for fast access
 corpus_dict = {doc['id']: doc for doc in corpus}
 queries_dict = {q['id']: q for q in queries}
 
-# Build the dataset for CachedMultipleNegativesRankingLoss
+# Build training data
 data = []
 for qrel in qrels:
     query_id = qrel['query-id']
@@ -46,7 +45,6 @@ for qrel in qrels:
     query_data = queries_dict[query_id]
     corpus_data = corpus_dict[corpus_id]
     
-    # Extract text fields (adjust field names if needed)
     query_text = query_data.get('text', query_data.get('query', ''))
     corpus_text = corpus_data.get('text', corpus_data.get('document', ''))
     
@@ -55,93 +53,79 @@ for qrel in qrels:
         'positive': corpus_text
     })
 
-
-# Create dataset
 st_dataset = Dataset.from_list(data)
-st_dataset = st_dataset.select_columns(['anchor', 'positive'])
 
-st_dataset = st_dataset.map(
-    lambda example: {
-        'anchor': example['anchor'][:512],
-        'positive': example['positive'][:512]
-    }
-)
-
-
-# Create 80/20 train/test split
+# Don't truncate - let the tokenizer handle it
 split_dataset = st_dataset.train_test_split(test_size=0.2, seed=42)
-
 train_dataset = split_dataset['train']
 eval_dataset = split_dataset['test']
 
-print(f"Train dataset size: {len(train_dataset)}")
-print(f"Eval dataset size: {len(eval_dataset)}")
-print(f"\nTrain example: {train_dataset[0]}")
-print(f"Eval example: {eval_dataset[0]}")
+# 3. Setup proper evaluation
+# Build proper relevant_docs mapping from qrels
+eval_queries = {}
+eval_corpus = {}
+eval_relevant_docs = {}
 
-# 4. Define a loss function
+for qrel in qrels:
+    query_id = qrel['query-id']
+    corpus_id = qrel['corpus-id']
+    
+    # Add query
+    if query_id not in eval_queries:
+        eval_queries[query_id] = queries_dict[query_id].get('text', '')
+    
+    # Add corpus doc
+    if corpus_id not in eval_corpus:
+        eval_corpus[corpus_id] = corpus_dict[corpus_id].get('text', '')
+    
+    # Add to relevant docs
+    if query_id not in eval_relevant_docs:
+        eval_relevant_docs[query_id] = set()
+    eval_relevant_docs[query_id].add(corpus_id)
+
+dev_evaluator = InformationRetrievalEvaluator(
+    queries=eval_queries,
+    corpus=eval_corpus,
+    relevant_docs=eval_relevant_docs,
+    name="gerdalir-test"
+)
+
+# 4. Loss function
 loss = CachedMultipleNegativesRankingLoss(model)
 
-# 5. (Optional) Specify training arguments
+# 5. Training arguments
 args = SentenceTransformerTrainingArguments(
     output_dir="models/qwen3-8b-embedding-ger-legal",
     num_train_epochs=3,
-    per_device_train_batch_size=4,
-    per_device_eval_batch_size=4,
+    per_device_train_batch_size=4,  # Reduce if OOM
+    per_device_eval_batch_size=8,
+    gradient_accumulation_steps=4,  # Effective batch size = 16
     learning_rate=2e-5,
     warmup_ratio=0.1,
+    fp16=True,  # Use fp16 instead of 4-bit
+    max_grad_norm=1.0,  # Gradient clipping
     batch_sampler=BatchSamplers.NO_DUPLICATES,
     eval_strategy="steps",
     eval_steps=100,
     save_strategy="steps",
     save_steps=100,
     save_total_limit=2,
-    logging_steps=100,
+    logging_steps=10,
+    load_best_model_at_end=True,
+    metric_for_best_model="eval_cosine_ndcg@10",
     report_to="tensorboard",
-    run_name="qwen3-8b-embedding-ger-legal",
 )
 
-# 6. t
-eval_dataset = eval_dataset.map(
-    lambda example, idx: {
-        'anchor_id': f'q{idx}',
-        'positive_id': f'd{idx}'
-    },
-    with_indices=True
-)
-
-# Then create evaluator
-queries = {f'q{i}': anchor for i, anchor in enumerate(eval_dataset['anchor'])}
-corpus = {f'd{i}': positive for i, positive in enumerate(eval_dataset['positive'])}
-relevant_docs = {f'q{i}': {f'd{i}'} for i in range(len(eval_dataset))}
-
-dev_evaluator = InformationRetrievalEvaluator(
-    queries=queries,
-    corpus=corpus,
-    relevant_docs=relevant_docs
-)
-
-dev_evaluator(model)
-
-# 7. Create a trainer & train
+# 6. Train
 trainer = SentenceTransformerTrainer(
     model=model,
     args=args,
     train_dataset=train_dataset,
-    eval_dataset=eval_dataset,
     loss=loss,
     evaluator=dev_evaluator,
-    callbacks=[TensorBoardCallback()]
 )
+
 trainer.train()
 
-# (Optional) Evaluate the trained model on the test set
-test_evaluator = InformationRetrievalEvaluator(
-    queries=queries,
-    corpus=corpus,
-    relevant_docs=relevant_docs
-)
-test_evaluator(model)
-
-# 8. Save the trained model
+# 7. Save
 model.save_pretrained("models/qwen3-8b-embedding-ger-legal/final")
