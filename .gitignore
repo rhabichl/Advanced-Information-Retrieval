@@ -17,3 +17,7 @@
 .DS_Store
 !AIR_DD_G27_ES.pdf
 embeddings/*
+
+!presentation/presentation.pdf
+!report/document.pdf
+!design-document/document.pdf
