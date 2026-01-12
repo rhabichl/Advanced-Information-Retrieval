@@ -16,3 +16,4 @@
 *.bcf
 .DS_Store
 !AIR_DD_G27_ES.pdf
+embeddings/*
