@@ -12,10 +12,9 @@ Baseline = run retrieval with a **pretrained** embedding model and report **Prec
 python3 -m pip install -r requirements.txt
 ```
 
-## Evaluation 
+## Evaluation
 
 Dataset: [`mteb/GerDaLIRSmall`](https://huggingface.co/datasets/mteb/GerDaLIRSmall), [`krapfi/Advanced-Information-Retrieval`](https://huggingface.co/datasets/krapfi/Advanced-Information-Retrieval), [`mteb/LeCaRDv2`](https://huggingface.co/datasets/mteb/LeCaRDv2)
-
 
 ```bash
 python3 compute_sim.py
@@ -35,4 +34,14 @@ After fine-tuning, evaluate the model
 
 ```bash
 python3 compute_sim.py
+```
+
+## Presentation (Marp)
+
+The presentation lives in `presentation/presentation.md` and is exported to `presentation/presentation.pdf`.
+
+To compile the PDF from the Markdown using Marp:
+
+```bash
+marp presentation/presentation.md --pdf --allow-local-files --output presentation/presentation.pdf
 ```
