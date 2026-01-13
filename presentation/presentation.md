@@ -4,7 +4,7 @@ theme: default
 paginate: true
 style: |
   section {
-    font-size: 22px;
+    font-size: 24px;
   }
   h1 { font-size: 44px; }
   h2 { font-size: 30px; }
@@ -24,7 +24,7 @@ Adapter: <https://huggingface.co/krapfi/Qwen3-Embedding-8B-Ger-Legal>
 
 # Introduction
 
-- We study embedding-based legal retrieval across jurisdictions.
+- Embedding-based legal retrieval across jurisdictions.
 - Research question: Can a model fine-tuned on German law improve retrieval in Austrian and Chinese law?
 - Goal: build legal search that transfers well without collecting large labeled datasets for every country.
 
@@ -36,8 +36,8 @@ Adapter: <https://huggingface.co/krapfi/Qwen3-Embedding-8B-Ger-Legal>
   - German: GerDaLIRSmall (test)
   - Austrian: synthetic query-document pairs created from Austrian legal texts
   - Chinese: LeCaRDv2 (test)
-- German and Chinese have relevance labels (can have multiple relevant documents per query).
-- Austrian setup is closer to one-to-one matching (each query has one source document).
+- German and Chinese have relevance labels.
+- Austrian setup is closer to one-to-one matching.
 
 ---
 
@@ -47,7 +47,7 @@ Adapter: <https://huggingface.co/krapfi/Qwen3-Embedding-8B-Ger-Legal>
 - Baseline pipeline:
   - Download datasets
   - Embed queries and documents
-  - Rank by dot-product similarity
+  - Rank by cosine similarity
 - Evaluation metrics: Recall@k, Precision@k, nDCG@k for k ∈ {1, 5, 10, 20, 50, 100}
 - Fine-tuning:
   - Train a LoRA adapter (PEFT) on German query-document pairs (GerDaLIR)
