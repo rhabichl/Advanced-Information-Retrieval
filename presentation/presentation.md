@@ -55,6 +55,14 @@ Adapter: <https://huggingface.co/krapfi/Qwen3-Embedding-8B-Ger-Legal>
 
 ---
 
+# Workflow
+
+- End-to-end pipeline from data collection to evaluation:
+
+![Workflow diagram](assets/flowchart.png)
+
+---
+
 # Results (German)
 
 - Fine-tuning improves retrieval on German data.
