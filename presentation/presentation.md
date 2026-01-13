@@ -4,10 +4,10 @@ theme: default
 paginate: true
 style: |
   section {
-    font-size: 24px;
+    font-size: 30px;
   }
   h1 { font-size: 44px; }
-  h2 { font-size: 30px; }
+  h2 { font-size: 36px; }
   img { max-height: 520px; width: auto; object-fit: contain; }
   table { font-size: 18px; }
 ---
