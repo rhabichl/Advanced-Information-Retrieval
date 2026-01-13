@@ -154,38 +154,30 @@ The full Austrian metrics are shown in Appendix Table~\ref{tab:results-austrian}
 On Chinese data, the fine-tuned model is slightly worse than the baseline on most \(k\).
 We do not see positive transfer from German to Chinese in this setup.
 This aligns with the idea that cross-lingual and cross-jurisdiction transfer is difficult without multilingual adaptation or Chinese training data.
-
 The Chinese metrics show relatively high Precision@k and nDCG@k in absolute terms.
 This is due to the dataset definition and relevance structure, and it also suggests that the base model already provides strong multilingual embeddings.
 Fine-tuning only on German can shift the embedding space toward German legal patterns and may slightly harm Chinese ranking.
-
 For example, nDCG@100 decreases from 0.8579 to 0.8407.
 The full Chinese metrics are shown in Appendix Table~\ref{tab:results-chinese}.
 
-\newpage
 \section{Conclusion}
 We fine-tuned Qwen3-Embedding-8B on German legal pairs and evaluated transfer to Austrian and Chinese retrieval.
 We find clear improvements on German test data.
 We do not find clear improvements on Austrian or Chinese datasets, and Chinese performance slightly decreases after German fine-tuning.
 Overall, our results suggest that domain and language transfer is limited in this setting, and that additional multilingual training data or adaptation methods would likely be needed.
-
 In other words, fine-tuning helps when the evaluation setting matches the training setting.
 Once the domain changes (different legal system) or the language changes (Chinese), the gains disappear.
 This is a useful result because it shows that a strong base embedding model already generalizes reasonably well, but domain-specific tuning can make the model more specialized.
-
 For future work, we would extend training with multilingual legal pairs and evaluate transfer again.
 We would also test training on a mix of German and Austrian data to see if small amounts of in-domain Austrian pairs can improve results.
 Finally, we would add an approximate nearest neighbor index for faster retrieval and evaluate whether it matches brute-force rankings at top-k.
 
-\section*{Limitations and Risks}
-Our Austrian dataset is synthetic and may not match real user queries.
+\textbf{Limitations and Risks}. Our Austrian dataset is synthetic and may not match real user queries.
 Cross-language transfer may require explicit multilingual training.
 Legal retrieval systems can reflect bias in training data and should not be used as a substitute for legal advice.
-
 Our evaluation uses random sampling of queries, so results can vary slightly across runs.
 We also rely on truncation to a fixed text length, which may remove important legal details in long documents.
 Finally, we only evaluate a single fine-tuning setup and set of hyperparameters, so there may be better configurations that we did not explore.
-
 Overall, the results should be interpreted as a controlled experiment that tests one clear transfer setting.
 Even though we do not see transfer to Austrian and Chinese here, this does not mean transfer is impossible.
 It suggests that transfer is not automatic, and that additional data or adaptation steps are needed when moving to a different jurisdiction or language.
