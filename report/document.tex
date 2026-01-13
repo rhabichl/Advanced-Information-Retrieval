@@ -90,10 +90,15 @@ German and Chinese datasets contain query-document relevance labels that can inc
 The Austrian dataset in our setup is closer to a one-to-one matching problem, because each generated query is linked to one source document.
 This makes the Austrian results harder to compare directly to German and Chinese, but it still gives a signal about transfer.
 
+Our Austrian dataset creation follows a similar idea to the dataset construction outlined in the GerDaLIR work \cite{wrzalik-krechel-2021-gerdalir}, in the sense that we build a structured corpus and then create query-document pairs for retrieval experiments.
+In practice, the Austrian Open Data interface is difficult to use and the scraped texts contain many formatting and quality issues.
+We expect that this poor data quality is a major reason for the weak performance on the Austrian dataset.
+
 \subsection{Model and Fine-Tuning}
 We use Qwen3-Embedding-8B \cite{qwen3embedding} as the baseline embedding model.
+We use the SentenceTransformers framework for both embedding creation and fine-tuning.
 We fine-tune the model on German query-document pairs using a LoRA adapter (PEFT) with 8-bit quantization.
-Training was done on an NVIDIA GeForce RTX 3090.
+Training was done on an NVIDIA H200.
 We use a contrastive ranking objective (multiple negatives) to increase similarity of matching query-document pairs and decrease similarity to other documents.
 
 We use LoRA because it is memory efficient and allows updating only a small number of trainable parameters.
@@ -103,8 +108,8 @@ The final output is a lightweight adapter that can be shared and loaded on top o
 
 \subsection{Workflow}
 We first download all datasets from Hugging Face.
-We then generate embeddings for all queries and documents with our embedding generation script (XXX).
-After that, we train a LoRA adapter on cleaned German query-document pairs.
+We then generate embeddings for all queries and documents with our embedding generation script (\texttt{generate\_embeddings.py}).
+After that, we train a LoRA adapter on cleaned German query-document pairs with \texttt{finetune\_lora.py}.
 Finally, we evaluate retrieval by randomly sampling 1000 queries and ranking them against the full corpus.
 
 For embedding generation, we truncate texts to a fixed maximum length (1024 characters in our scripts) to control memory and runtime.
@@ -140,6 +145,7 @@ This suggests that German fine-tuning does not reliably transfer to this synthet
 One possible reason is that the Austrian queries were generated and may not match real search behavior.
 Another reason is that Austrian legal language and structure can differ from German training data, even if the language is similar.
 Because the task is closer to matching a query back to its source document, small wording differences can have a large impact.
+We also observed that the Austrian Open Data interface and scraped texts are noisy and sometimes poorly formatted, which likely hurts both embedding quality and evaluation reliability.
 
 Overall, the values remain close to zero, and the fine-tuned model does not consistently improve the ranking.
 The full Austrian metrics are shown in Appendix Table~\ref{tab:results-austrian}.
